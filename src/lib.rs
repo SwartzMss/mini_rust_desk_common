@@ -1,7 +1,7 @@
-extern crate mini_rust_desk_proto;
 pub use protobuf;
-pub use mini_rust_desk_proto::message_proto as message_proto;
-pub use mini_rust_desk_proto::rendezvous_proto as rendezvous_proto;
+mod protos;
+pub use protos::message as message_proto;
+pub use protos::rendezvous as rendezvous_proto;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 pub mod compress;
 pub use log;
@@ -13,7 +13,8 @@ pub mod udp;
 pub use anyhow::{self, bail};
 pub mod fs;
 pub use lazy_static;
-// pub mod keyboard;
+pub mod keyboard;
+pub use std::time::{self, SystemTime, UNIX_EPOCH};
 pub type ResultType<F, E = anyhow::Error> = anyhow::Result<F, E>;
 pub type Stream = tcp::FramedStream;
 
@@ -27,6 +28,41 @@ pub fn is_ip_str(id: &str) -> bool {
     is_ipv4_str(id) || is_ipv6_str(id)
 }
 
+#[macro_export]
+macro_rules! allow_err {
+    ($e:expr) => {
+        if let Err(err) = $e {
+            log::debug!(
+                "{:?}, {}:{}:{}:{}",
+                err,
+                module_path!(),
+                file!(),
+                line!(),
+                column!()
+            );
+        } else {
+        }
+    };
+
+    ($e:expr, $($arg:tt)*) => {
+        if let Err(err) = $e {
+            log::debug!(
+                "{:?}, {}, {}:{}:{}:{}",
+                err,
+                format_args!($($arg)*),
+                module_path!(),
+                file!(),
+                line!(),
+                column!()
+            );
+        } else {
+        }
+    };
+}
+
+pub async fn sleep(sec: f32) {
+    tokio::time::sleep(time::Duration::from_secs_f32(sec)).await;
+}
 
 pub fn timeout<T: std::future::Future>(ms: u64, future: T) -> tokio::time::Timeout<T> {
     tokio::time::timeout(std::time::Duration::from_millis(ms), future)
@@ -53,3 +89,16 @@ pub fn is_ipv6_str(id: &str) -> bool {
         .unwrap()
         .is_match(id)
 }
+
+pub fn get_modified_time(path: &std::path::Path) -> SystemTime {
+    std::fs::metadata(path)
+        .map(|m| m.modified().unwrap_or(UNIX_EPOCH))
+        .unwrap_or(UNIX_EPOCH)
+}
+
+pub fn get_created_time(path: &std::path::Path) -> SystemTime {
+    std::fs::metadata(path)
+        .map(|m| m.created().unwrap_or(UNIX_EPOCH))
+        .unwrap_or(UNIX_EPOCH)
+}
+

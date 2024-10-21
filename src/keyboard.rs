@@ -1,6 +1,6 @@
 use std::{fmt, slice::Iter, str::FromStr};
 
-use crate::mini_rust_desk_proto::message_proto::KeyboardMode;
+use crate::protos::message::KeyboardMode;
 
 impl fmt::Display for KeyboardMode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

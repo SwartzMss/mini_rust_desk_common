@@ -581,8 +581,8 @@ dependencies = [
  "log",
  "mac_address",
  "machine-uid",
- "mini_rust_desk_proto",
  "protobuf",
+ "protobuf-codegen",
  "rand",
  "regex",
  "serde",
@@ -595,16 +595,6 @@ dependencies = [
  "tokio-util",
  "winapi",
  "zstd",
-]
-
-[[package]]
-name = "mini_rust_desk_proto"
-version = "0.1.0"
-source = "git+https://github.com/SwartzMss/mini_rust_desk_proto?rev=4b6d1d5e8f12976e96c0502f2b9cbfc603cc8ba1#4b6d1d5e8f12976e96c0502f2b9cbfc603cc8ba1"
-dependencies = [
- "bytes",
- "protobuf",
- "protobuf-codegen",
 ]
 
 [[package]]
