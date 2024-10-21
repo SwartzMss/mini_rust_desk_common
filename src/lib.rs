@@ -175,3 +175,30 @@ impl AddrMangle {
         ))
     }
 }
+
+
+pub fn get_version_from_url(url: &str) -> String {
+    let n = url.chars().count();
+    let a = url.chars().rev().position(|x| x == '-');
+    if let Some(a) = a {
+        let b = url.chars().rev().position(|x| x == '.');
+        if let Some(b) = b {
+            if a > b {
+                if url
+                    .chars()
+                    .skip(n - b)
+                    .collect::<String>()
+                    .parse::<i32>()
+                    .is_ok()
+                {
+                    return url.chars().skip(n - a).collect();
+                } else {
+                    return url.chars().skip(n - a).take(a - b - 1).collect();
+                }
+            } else {
+                return url.chars().skip(n - a).collect();
+            }
+        }
+    }
+    "".to_owned()
+}
