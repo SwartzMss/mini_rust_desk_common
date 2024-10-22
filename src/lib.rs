@@ -10,7 +10,7 @@ pub use tokio_util;
 pub mod bytes_codec;
 pub mod tcp;
 pub mod udp;
-pub use anyhow::{self, bail};
+pub use anyhow::{self, bail,Result};
 pub mod fs;
 pub use lazy_static;
 pub mod keyboard;
@@ -201,4 +201,9 @@ pub fn get_version_from_url(url: &str) -> String {
         }
     }
     "".to_owned()
+}
+
+pub async fn listen_signal() -> Result<()> {
+    let () = std::future::pending().await;
+    unreachable!();
 }
