@@ -15,6 +15,8 @@ pub use tokio_socks::IntoTargetAddr;
 pub use tokio_socks::TargetAddr;
 pub mod tcp;
 pub mod udp;
+pub use libc;
+pub use bytes;
 pub use anyhow::{self, bail,Result};
 pub mod fs;
 pub use lazy_static;
