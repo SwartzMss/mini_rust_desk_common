@@ -7,6 +7,8 @@ pub mod compress;
 pub use log;
 pub use tokio;
 pub use tokio_util;
+pub use futures_util;
+pub use futures;
 pub mod bytes_codec;
 pub use tokio_socks;
 pub use tokio_socks::IntoTargetAddr;
@@ -25,11 +27,25 @@ pub mod keyboard;
 pub use std::time::{self, SystemTime, UNIX_EPOCH};
 pub type ResultType<F, E = anyhow::Error> = anyhow::Result<F, E>;
 pub type Stream = tcp::FramedStream;
+pub mod socket_client;
+pub mod config;
+pub mod proxy;
+use config::Config;
+pub mod password_security;
+pub mod platform;
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use sodiumoxide::crypto::sign;
 use std::{
     io::prelude::*,
     io::Read
 };
+pub use sysinfo;
+pub use thiserror;
+pub use toml;
+pub use uuid;
+
+pub type SessionID = uuid::Uuid;
 
 pub fn is_ipv4_str(id: &str) -> bool {
     regex::Regex::new(r"^\d+\.\d+\.\d+\.\d+(:\d+)?$")
@@ -39,6 +55,20 @@ pub fn is_ipv4_str(id: &str) -> bool {
 
 pub fn is_ip_str(id: &str) -> bool {
     is_ipv4_str(id) || is_ipv6_str(id)
+}
+
+pub fn get_time() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0) as _
+}
+
+pub fn get_uuid() -> Vec<u8> {
+    if let Ok(id) = machine_uid::get() {
+        return id.into();
+    }
+    Config::get_key_pair().1
 }
 
 #[macro_export]
@@ -221,7 +251,6 @@ pub async fn listen_signal() -> Result<()> {
     unreachable!();
 }
 
-
 pub fn gen_sk(wait: u64) -> (String, Option<sign::SecretKey>) {
     let sk_file = "id_ed25519";
     if wait > 0 && !std::path::Path::new(sk_file).exists() {
@@ -231,11 +260,11 @@ pub fn gen_sk(wait: u64) -> (String, Option<sign::SecretKey>) {
         let mut contents = String::new();
         if file.read_to_string(&mut contents).is_ok() {
             let contents = contents.trim();
-            let sk = base64::decode(contents).unwrap_or_default();
+            let sk = STANDARD.decode(contents).unwrap_or_default();
             if sk.len() == sign::SECRETKEYBYTES {
                 let mut tmp = [0u8; sign::SECRETKEYBYTES];
                 tmp[..].copy_from_slice(&sk);
-                let pk = base64::encode(&tmp[sign::SECRETKEYBYTES / 2..]);
+                let pk = STANDARD.encode(&tmp[sign::SECRETKEYBYTES / 2..]);
                 log::info!("Private key comes from {}", sk_file);
                 return (pk, Some(sign::SecretKey(tmp)));
             } else {
@@ -246,7 +275,7 @@ pub fn gen_sk(wait: u64) -> (String, Option<sign::SecretKey>) {
     } else {
         let gen_func = || {
             let (tmp, sk) = sign::gen_keypair();
-            (base64::encode(tmp), sk)
+            (STANDARD.encode(tmp), sk)
         };
         let (mut pk, mut sk) = gen_func();
         for _ in 0..300 {
@@ -259,7 +288,7 @@ pub fn gen_sk(wait: u64) -> (String, Option<sign::SecretKey>) {
         if let Ok(mut f) = std::fs::File::create(&pub_file) {
             f.write_all(pk.as_bytes()).ok();
             if let Ok(mut f) = std::fs::File::create(sk_file) {
-                let s = base64::encode(&sk);
+                let s = STANDARD.encode(&sk);
                 if f.write_all(s.as_bytes()).is_ok() {
                     log::info!("Private/public key written to {}/{}", sk_file, pub_file);
                     log::debug!("Public key: {}", pk);

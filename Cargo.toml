@@ -30,7 +30,15 @@ bytes = { version = "1.6", features = ["serde"] }
 tokio-util = { version = "0.7", features = ["full"] }
 flexi_logger = { version = "0.27", features = ["async"] }
 tokio-socks = { git = "https://github.com/rustdesk-org/tokio-socks" }
-base64 = "0.13"
+confy = { git = "https://github.com/rustdesk-org/confy" }
+sysinfo = { git = "https://github.com/rustdesk-org/sysinfo", branch = "rlim_max" }
+thiserror = "1.0"
+httparse = "1.5"
+base64 = "0.22"
+url = "2.2"
+tokio-native-tls ="0.3"
+toml = "0.7"
+uuid = { version = "1.3", features = ["v4"] }
 
 [build-dependencies]
 protobuf-codegen = { version = "3.4" }

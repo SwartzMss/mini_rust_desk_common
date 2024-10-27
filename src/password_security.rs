@@ -79,15 +79,18 @@ pub fn approve_mode() -> ApproveMode {
 pub fn hide_cm() -> bool {
     approve_mode() == ApproveMode::Password
         && verification_method() == VerificationMethod::OnlyUsePermanentPassword
-        && !Config::get_option("allow-hide-cm").is_empty()
+        && crate::config::option2bool("allow-hide-cm", &Config::get_option("allow-hide-cm"))
 }
 
 const VERSION_LEN: usize = 2;
 
-pub fn encrypt_str_or_original(s: &str, version: &str) -> String {
+pub fn encrypt_str_or_original(s: &str, version: &str, max_len: usize) -> String {
     if decrypt_str_or_original(s, version).1 {
         log::error!("Duplicate encryption!");
         return s.to_owned();
+    }
+    if s.chars().count() > max_len {
+        return String::default();
     }
     if version == "00" {
         if let Ok(s) = encrypt(s.as_bytes()) {
@@ -100,15 +103,16 @@ pub fn encrypt_str_or_original(s: &str, version: &str) -> String {
 // String: password
 // bool: whether decryption is successful
 // bool: whether should store to re-encrypt when load
+// note: s.len() return length in bytes, s.chars().count() return char count
+//       &[..2] return the left 2 bytes, s.chars().take(2) return the left 2 chars
 pub fn decrypt_str_or_original(s: &str, current_version: &str) -> (String, bool, bool) {
     if s.len() > VERSION_LEN {
-        let version = &s[..VERSION_LEN];
-        if version == "00" {
+        if s.starts_with("00") {
             if let Ok(v) = decrypt(s[VERSION_LEN..].as_bytes()) {
                 return (
                     String::from_utf8_lossy(&v).to_string(),
                     true,
-                    version != current_version,
+                    "00" != current_version,
                 );
             }
         }
@@ -117,10 +121,13 @@ pub fn decrypt_str_or_original(s: &str, current_version: &str) -> (String, bool,
     (s.to_owned(), false, !s.is_empty())
 }
 
-pub fn encrypt_vec_or_original(v: &[u8], version: &str) -> Vec<u8> {
+pub fn encrypt_vec_or_original(v: &[u8], version: &str, max_len: usize) -> Vec<u8> {
     if decrypt_vec_or_original(v, version).1 {
         log::error!("Duplicate encryption!");
         return v.to_owned();
+    }
+    if v.len() > max_len {
+        return vec![];
     }
     if version == "00" {
         if let Ok(s) = encrypt(v) {
