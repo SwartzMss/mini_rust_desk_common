@@ -33,6 +33,8 @@ pub type Stream = tcp::FramedStream;
 pub mod socket_client;
 pub mod config;
 pub mod proxy;
+pub use rand;
+pub use sodiumoxide;
 use config::Config;
 pub mod password_security;
 pub mod platform;
