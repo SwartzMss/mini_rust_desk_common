@@ -34,6 +34,7 @@ pub mod socket_client;
 pub mod config;
 pub mod proxy;
 pub use rand;
+pub use base64;
 pub use sodiumoxide;
 use config::Config;
 pub mod password_security;
